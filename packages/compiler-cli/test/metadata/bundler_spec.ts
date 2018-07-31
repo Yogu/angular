@@ -56,6 +56,23 @@ describe('compiler host adapter', () => {
     ]);
   });
 
+  it('should retrieve metadata for an implied index relative path reference with export *', () => {
+    const context = new MockAotContext('.', SIMPLE_LIBRARY_WITH_EXPORT_ALL_IN_IMPLIED_INDEX);
+    const host = new MockCompilerHost(context);
+    const options: ts.CompilerOptions = {
+      moduleResolution: ts.ModuleResolutionKind.NodeJs,
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES5,
+    };
+    const adapter = new CompilerHostAdapter(host, null, options);
+    const metadata = adapter.getMetadataFor('./lib', '.');
+
+    expect(metadata).toBeDefined();
+    expect(Object.keys(metadata !.metadata).sort()).toEqual([
+      'One'
+    ]);
+  });
+
   it('should fail to retrieve metadata for an implied index with classic module resolution', () => {
     const context = new MockAotContext('.', SIMPLE_LIBRARY_WITH_IMPLIED_INDEX);
     const host = new MockCompilerHost(context);
@@ -477,6 +494,22 @@ export const SIMPLE_LIBRARY_WITH_IMPLIED_INDEX = {
           export const TWO_CLASSES = [Two, TwoMore, PrivateTwo];
         `
       }
+    }
+  }
+};
+
+export const SIMPLE_LIBRARY_WITH_EXPORT_ALL_IN_IMPLIED_INDEX = {
+  'lib': {
+    'index.ts': `
+      export * from './src';
+    `,
+    'src': {
+      'index.ts': `
+        export * from './src'; // this should resolve to lib/src/src.ts
+      `,
+      'src.ts': `
+        export class One {}
+      `
     }
   }
 };
